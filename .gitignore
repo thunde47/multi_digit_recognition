@@ -3,3 +3,6 @@ data*
 
 #Ignore scripts written for learning advanced Python features
 learn_python*
+
+#Ignore temporary files
+*~

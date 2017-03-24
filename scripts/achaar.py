@@ -9,13 +9,13 @@ import random
 
 
 total_images=33401
-images_used=total_images
+images_used=1
 percent_training=0.9
 width=128
 height=64
-image_path='train_mod_'+str(width)+'x'+str(height)+'/'
+image_path='../data_SVHN/train_mod_'+str(width)+'x'+str(height)+'/'
 print("Reading images from the v7.mat file...\n")
-struct=sio.loadmat('train/digitStruct_v7.mat')
+struct=sio.loadmat('../data_SVHN/train/digitStruct_v7.mat')
 lengths=np.zeros(images_used)
 digits=np.full((images_used,5),10.)
 random_indices=np.arange(images_used)
@@ -52,7 +52,7 @@ for i in range(images_used):
 	digit5[i]=digits[i][4]
 
 target=[lengths,digit1,digit2,digit3,digit4,digit5]
-
+print(target)
 dataset=[]
 
 print("Creating dataset of images...\n")
@@ -81,7 +81,7 @@ for i in range(6):
 	train_target.append(target_enc[0:training_samples])
 	test_target.append(target_enc[training_samples:total_images])
 	all_labels.append(target_enc[0].size)
-
+print(test_dataset)
 achaar_file = 'svhn'+str(width)+'x'+str(height)+'.achaar'
 print("Saving data to %s ...\n" %achaar_file)
 try:

@@ -7,24 +7,15 @@ from sklearn.preprocessing import OneHotEncoder
 from time import time
 import random
 from functools import wraps
-
-def composer(path_string):
-  def decorator(func):
-    @wraps(func)
-    def wrapper(*args,**kwargs):
-      a,b=func(*args, **kwargs)
-      return path_string+str(a)+'x'+str(b)
-    return wrapper
-  return decorator
   
 def timer(func):
   @wraps(func)
   def wrapper(*args,**kwargs):
-    print('Current Function name:: {0}()'.format(func.__name__))
+    print('\nCurrent Function name:: {0}()'.format(func.__name__))
     print('Function details:: {0}'.format(func.__doc__))
     t=time()
     result=func(*args,**kwargs)
-    print('Time elapsed in this function:: {0} \n'.format(time()-t))
+    print('Time elapsed in this function:: {0}\n'.format(time()-t))
     return result
   return wrapper
 
@@ -43,23 +34,22 @@ class IMAGE():
     self.height=height
     self.width=width
     self.images_used=images_used
-    self.training_samples=percent_training*images_used
-    self.random_indices=random.shuffle(np.arange(self.images_used))
-    self.image_path=self.generate_name()+'/'
+    self.training_samples=int(percent_training*images_used)
+    self.random_indices=np.arange(self.images_used)
+    random.shuffle(self.random_indices)
+    self.image_path=self.generate_name('../data_SVHN/train_mod_')+'/'
   
-  @timer
-  @composer("train_mod_")  
-  def generate_name(self):
+  def generate_name(self, path_string):
     '''Returns path of the folder where images will be saved'''
     
-    return self.width, self.height
-  
+    return path_string+str(self.width)+'x'+str(self.height)
+      
   @timer
   def downscale(self):
     '''Downscales images to a common aspect ratio'''
     
     for i in range(33401):
-      image_name=str(i)+'.png'
+      image_name=str(i+1)+'.png'
       with open('train/'+image_name, 'r+b') as f:
         with Image.open(f) as image:
           cover=resizeimage.resize_cover(image,[self.width,self.height],validate=False)
@@ -69,13 +59,11 @@ class IMAGE():
   def create_targets_from_struct(self):
     '''Extracts image information from MATLAB struct'''
     
-    print("Reading images from the v7.mat file...\n")
-    
-    struct=sio.loadmat('train/digitStruct_v7.mat')
+    struct=sio.loadmat('../data_SVHN/train/digitStruct_v7.mat')
     lengths=np.zeros(self.images_used)
     digits=np.full((self.images_used,5),10.)
     
-    for i,k in range(self.images_used),self.random_indices:
+    for i,k in zip(range(self.images_used),self.random_indices):
       _,length=struct['digitStruct']['bbox'][0][k].shape
       if length>5:
         length=5
@@ -87,41 +75,38 @@ class IMAGE():
           digits[i][j]=int(0)
         else:
           digits[i][j]=digit
-    target_dataset=[lengths,digits[:][0],digits[:][1],digits[:][2],digits[:][3],digits[:][4]]
-    
+    target_dataset=[lengths,digits[:,0],digits[:,1],digits[:,2],digits[:,3],digits[:,4]]
+        
     for i in range(6):
       enc=OneHotEncoder()
       target_enc=enc.fit_transform(target_dataset[i].reshape(-1,1)).toarray()	
       self.train_target.append(target_enc[0:self.training_samples])
-      self.test_target.append(target_enc[self.training_samples:])
-      self.all_labels.append(target_enc[0].size)
-  
+      self.test_target.append(target_enc[self.training_samples:-1])
+      self.all_labels.append(target_enc[0].size)    
+  	
   @timer 
   def create_inputs_from_images(self):
-    '''Renames images in numerical order and saves in image folder'''
+    '''Creates inputs list(randomized)from the images dataset'''
     
-    print("Creating dataset of images...\n")
-    #input_dataset.append(np.array(image))
-    input_dataset=list(self.get_image_generator)
-    self.normalize_data(input_dataset)
+    input_dataset=list(self.get_image_generator())
+    mean,std,_,_=self.data_statistics(input_dataset)
+    input_dataset=0.5*(input_dataset-mean)/std
     self.train_dataset=input_dataset[0:self.training_samples]
     self.test_dataset=input_dataset[self.training_samples:]
   
-  @timer
+  
   def get_image_generator(self):
     '''A generator method to save memory while creating inputs from images'''
     
     for i in self.random_indices:
-      image_name=str(i)+'.png'
-      yield Image.open(self.image_path+image_name)
+      image_name=str(i+1)+'.png'
+      yield np.array(Image.open(self.image_path+image_name))
     
   @timer
-  @composer("svhn")
   def achaarify(self):
     '''Accharifies (pickles) the training and validation data'''
     
-    achaar_file = self.generate_name()
-    print("Saving data to %s ...\n" %achaar_file)
+    achaar_file = self.generate_name("../data_SVHN/svhn_")+'.achaar'
     try:
       f = open(achaar_file, 'wb')
       save = {	
@@ -135,17 +120,15 @@ class IMAGE():
       f.close()
     except Exception as e:
       print('Unable to save data to', achaar_file, ':', e)
-      raise
-  
+      raise  
   
   @staticmethod
-  @timer
-  def normalize_data(data):
+  def data_statistics(data):
     '''Normalizes data by standard deviation'''
+    return (np.mean(data),np.std(data),np.max(data),np.min(data))       
     
-    data=0.5*(data-np.mean(data))/np.std(data) 
-    
-    
-image_object=IMAGE(64,32,100)
-
+image_object=IMAGE(64,32,10000)
+image_object.create_targets_from_struct()
+image_object.create_inputs_from_images()
+image_object.achaarify()
 
