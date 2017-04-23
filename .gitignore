@@ -6,3 +6,6 @@ learn_python*
 
 #Ignore temporary files
 *~
+
+#Ignore non OOP achaarification file
+/scripts/achaar.py
