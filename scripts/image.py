@@ -28,9 +28,9 @@ class IMAGE():
   test_target=[]
   all_labels=[]
   
-  def __init__(self, width, height, images_used, percent_training=0.9):
+  def __init__(self, width, height, images_used, percent_training=0.9, channels=3):
     '''Initializer to initiate height and width of the images'''
-    
+    self.channels=channels
     self.height=height
     self.width=width
     self.images_used=images_used
@@ -89,7 +89,8 @@ class IMAGE():
     '''Creates inputs list(randomized)from the images dataset'''
     
     input_dataset=list(self.get_image_generator())
-    mean,std,_,_=self.data_statistics(input_dataset)
+    mean,std=self.mean_std(input_dataset)
+    print('Mean={0}, Standard deviation={1}'.format(mean,std))
     input_dataset=0.5*(input_dataset-mean)/std
     self.train_dataset=input_dataset[0:self.training_samples]
     self.test_dataset=input_dataset[self.training_samples:]
@@ -123,11 +124,26 @@ class IMAGE():
       raise  
   
   @staticmethod
-  def data_statistics(data):
-    '''Normalizes data by standard deviation'''
-    return (np.mean(data),np.std(data),np.max(data),np.min(data))       
+  def mean_std(data):
+    '''Returns mean, standard deviation'''
+    return np.mean(data),np.std(data)
+   
+  @staticmethod
+  @timer
+  def incremental_mean_std(x):
+		'''Returns mean and standard deviation'''
+		N=len(x)*np.shape(x[0])[0]*np.shape(x[0])[1]*np.shape(x[0])[2]
+		sum_x2=0.0
+		sum_x=0.0
+		for image in x:
+			for pixel in np.nditer(image):
+				sum_x+=pixel
+				sum_x2+=pixel**2.0
+		m=sum_x/N
+		s=((sum_x2-N*m*m)/(N-1))**0.5
+		return m, s         
     
-image_object=IMAGE(64,32,10000)
+image_object=IMAGE(64,32,30000)
 image_object.create_targets_from_struct()
 image_object.create_inputs_from_images()
 image_object.achaarify()
