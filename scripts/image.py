@@ -144,8 +144,5 @@ class IMAGE():
 		s=((sum_x2-N*m*m)/(N-1))**0.5
 		return m, s         
     
-image_object=IMAGE(64,32,20,shuffle=False)
-image_object.create_targets_from_struct()
-image_object.create_inputs_from_images()
-image_object.achaarify()
+
 

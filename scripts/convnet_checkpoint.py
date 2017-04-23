@@ -4,18 +4,14 @@ from sklearn.preprocessing import OneHotEncoder
 import tensorflow as tf
 import os.path
 import numpy as np
-import sys
+
 import matplotlib.pyplot as plt
 
 def vertical_display(value):
 	print(value)
 
-def main():
-
-	restore=sys.argv[1]=='True'
-		
-	iterations=1000
-	images_used=20
+def evolve(restore, images_used):		
+	iterations=100
 	batch_size = 16
 	patch_size = 3
 	depth = 32
@@ -134,7 +130,7 @@ def main():
 					feed_dict_test = {tf_train_dataset : test_dataset, tf_train_labels : test_labels, keep_prob:1.0}
 				
 					test_prediction=session.run([train_prediction],feed_dict=feed_dict_test)
-					print(test_prediction)
+					
 					'''
 					print("Originals",test_labels)
 					#print(tf.nn.softmax(test_prediction).eval())	
@@ -157,8 +153,6 @@ def main():
 					'''
 					print('Test accuracy: %.1f%%' % accuracy.eval(feed_dict=feed_dict_test))
 
-if __name__=="__main__":
-	main()
 
 
 
