@@ -28,7 +28,7 @@ class IMAGE():
   test_target=[]
   all_labels=[]
   
-  def __init__(self, width, height, images_used, percent_training=0.9, channels=3):
+  def __init__(self, width, height, images_used, percent_training=0.9, channels=3, shuffle=False):
     '''Initializer to initiate height and width of the images'''
     self.channels=channels
     self.height=height
@@ -36,7 +36,8 @@ class IMAGE():
     self.images_used=images_used
     self.training_samples=int(percent_training*images_used)
     self.random_indices=np.arange(self.images_used)
-    random.shuffle(self.random_indices)
+    if shuffle:
+    	random.shuffle(self.random_indices)
     self.image_path=self.generate_name('../data_SVHN/train_mod_')+'/'
   
   def generate_name(self, path_string):
@@ -81,7 +82,7 @@ class IMAGE():
       enc=OneHotEncoder()
       target_enc=enc.fit_transform(target_dataset[i].reshape(-1,1)).toarray()	
       self.train_target.append(target_enc[0:self.training_samples])
-      self.test_target.append(target_enc[self.training_samples:-1])
+      self.test_target.append(target_enc[self.training_samples:])
       self.all_labels.append(target_enc[0].size)    
   	
   @timer 
@@ -107,7 +108,7 @@ class IMAGE():
   def achaarify(self):
     '''Accharifies (pickles) the training and validation data'''
     
-    achaar_file = self.generate_name("../data_SVHN/svhn_")+'.achaar'
+    achaar_file = self.generate_name("../data_SVHN/svhn_")+'x'+str(self.images_used)+'.achaar'
     try:
       f = open(achaar_file, 'wb')
       save = {	
@@ -143,7 +144,7 @@ class IMAGE():
 		s=((sum_x2-N*m*m)/(N-1))**0.5
 		return m, s         
     
-image_object=IMAGE(64,32,30000)
+image_object=IMAGE(64,32,20,shuffle=False)
 image_object.create_targets_from_struct()
 image_object.create_inputs_from_images()
 image_object.achaarify()
