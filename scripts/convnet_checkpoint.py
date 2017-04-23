@@ -14,17 +14,17 @@ def main():
 
 	restore=sys.argv[1]=='True'
 		
-	iterations=50
-
-	batch_size = 64
-	patch_size = 5
+	iterations=1000
+	images_used=20
+	batch_size = 16
+	patch_size = 3
 	depth = 32
-	num_hidden = 32
+	num_hidden = 500
 	num_channels=3
 	width=64
 	height=32
 
-	achaar_file='svhn'+str(width)+'x'+str(height)+'.achaar'
+	achaar_file='../data_SVHN/svhn_'+str(width)+'x'+str(height)+'x'+str(images_used)+'.achaar'
 	print("Loading pickeled file...\n")
 	with open(achaar_file,'rb') as f:
 		save=pickle.load(f)
@@ -85,7 +85,7 @@ def main():
 			loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits, tf_train_labels))
 	
 			global_step=tf.Variable(0)
-			learning_rate=tf.train.exponential_decay(.1,global_step,100,.9,staircase=True)
+			learning_rate=tf.train.exponential_decay(.1,global_step,1000,.9,staircase=True)
 			#optimizer = tf.train.GradientDescentOptimizer(learning_rate).minimize(loss,global_step=global_step)
 			#optimizer=tf.train.AdagradOptimizer(learning_rate=.05,initial_accumulator_value=0.1,use_locking=False)
 			optimizer=tf.train.AdamOptimizer(learning_rate).minimize(loss)
@@ -114,7 +114,7 @@ def main():
 						_, l, predictions = session.run([optimizer, loss, train_prediction], feed_dict=feed_dict_train)
 						batch_accuracy=accuracy.eval(feed_dict=feed_dict_train_eval)
 						plot_accuracy.append(batch_accuracy)
-						if (step % 10 == 0):
+						if (step % 100 == 0):
 							print('Minibatch loss at step %d: %f' %(step, l))
 							print('Minibatch accuracy: %.1f%%' %batch_accuracy)		
 					
@@ -134,15 +134,18 @@ def main():
 					feed_dict_test = {tf_train_dataset : test_dataset, tf_train_labels : test_labels, keep_prob:1.0}
 				
 					test_prediction=session.run([train_prediction],feed_dict=feed_dict_test)
-					#print(test_prediction)
+					print(test_prediction)
+					'''
+					print("Originals",test_labels)
 					#print(tf.nn.softmax(test_prediction).eval())	
-				
+					
 					if (target_number>0):
 					
 						original=np.concatenate((np.array(range(all_labels[target_number]-1)),np.array([10])))
 					
 					else:
 						original=np.array(range(1,all_labels[target_number]+1))
+					print(original)	
 					original_array=np.tile(original,(len(test_labels),1))
 					print("Actual output, Prediction output")
 					map(vertical_display,zip(np.amax(np.multiply(original,test_labels),axis=1),original_array[np.arange(len(test_prediction)),np.argmax(test_prediction[0],axis=1)]))
@@ -151,6 +154,7 @@ def main():
 					#print(np.amax(np.multiply(test_prediction,test_labels)))
 			
 					#print('Test prediction:', test_prediction[0][5], test_labels[0])	
+					'''
 					print('Test accuracy: %.1f%%' % accuracy.eval(feed_dict=feed_dict_test))
 
 if __name__=="__main__":
