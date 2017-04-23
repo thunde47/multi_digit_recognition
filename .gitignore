@@ -9,3 +9,9 @@ learn_python*
 
 #Ignore non OOP achaarification file
 /scripts/achaar.py
+
+#Ignore recording files like profiling or overnight results
+*rec
+
+#Ignore commiting checkpoints
+*ckpt*
