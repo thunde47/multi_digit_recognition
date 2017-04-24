@@ -10,15 +10,13 @@ import matplotlib.pyplot as plt
 def vertical_display(value):
 	print(value)
 
-def evolve(restore, images_used):		
-	iterations=100
-	batch_size = 16
-	patch_size = 3
-	depth = 32
-	num_hidden = 500
+def evolve(restore, images_used, width, height, iterations, batch_size=16, num_hidden=16):		
+	
+	patch_size1 = 5
+	depth1 = 16
+	patch_size2= 7
+	depth2=512
 	num_channels=3
-	width=64
-	height=32
 
 	achaar_file='../data_SVHN/svhn_'+str(width)+'x'+str(height)+'x'+str(images_used)+'.achaar'
 	print("Loading pickeled file...\n")
@@ -46,14 +44,14 @@ def evolve(restore, images_used):
 			tf_train_labels=tf.placeholder(tf.float32, shape=(None, num_labels))
 
 			#Defining layers, weights and biases
-			layer1_weights=tf.Variable(tf.truncated_normal([patch_size,patch_size, num_channels, depth], stddev=0.01))
+			layer1_weights=tf.Variable(tf.truncated_normal([patch_size1,patch_size1, num_channels, depth1], stddev=0.01))
 			#layer1_biases=tf.Variable(tf.zeros([depth]))
-			layer1_biases=tf.Variable(tf.zeros([depth]))
+			layer1_biases=tf.Variable(tf.zeros([depth1]))
 
-			layer2_weights=tf.Variable(tf.truncated_normal([patch_size, patch_size,depth,depth],stddev=0.01))
-			layer2_biases=tf.Variable(tf.constant(1.0, shape=[depth]))
+			layer2_weights=tf.Variable(tf.truncated_normal([patch_size2, patch_size2,depth1,depth2],stddev=0.01))
+			layer2_biases=tf.Variable(tf.constant(1.0, shape=[depth2]))
 
-			layer3_weights=tf.Variable(tf.truncated_normal([width//4*height//4*depth,num_hidden],stddev=0.01))
+			layer3_weights=tf.Variable(tf.truncated_normal([width//4*height//4*depth2,num_hidden],stddev=0.01))
 			layer3_biases=tf.Variable(tf.constant(1.0, shape=[num_hidden]))
 	
 			layer4_weights=tf.Variable(tf.truncated_normal([num_hidden,num_labels],stddev=0.1))
@@ -81,7 +79,7 @@ def evolve(restore, images_used):
 			loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits, tf_train_labels))
 	
 			global_step=tf.Variable(0)
-			learning_rate=tf.train.exponential_decay(.1,global_step,1000,.9,staircase=True)
+			learning_rate=tf.train.exponential_decay(0.5,global_step,1000,.9,staircase=True)
 			#optimizer = tf.train.GradientDescentOptimizer(learning_rate).minimize(loss,global_step=global_step)
 			#optimizer=tf.train.AdagradOptimizer(learning_rate=.05,initial_accumulator_value=0.1,use_locking=False)
 			optimizer=tf.train.AdamOptimizer(learning_rate).minimize(loss)
@@ -110,7 +108,7 @@ def evolve(restore, images_used):
 						_, l, predictions = session.run([optimizer, loss, train_prediction], feed_dict=feed_dict_train)
 						batch_accuracy=accuracy.eval(feed_dict=feed_dict_train_eval)
 						plot_accuracy.append(batch_accuracy)
-						if (step % 100 == 0):
+						if (step % 50 == 0):
 							print('Minibatch loss at step %d: %f' %(step, l))
 							print('Minibatch accuracy: %.1f%%' %batch_accuracy)		
 					
