@@ -4,7 +4,6 @@ from sklearn.preprocessing import OneHotEncoder
 import tensorflow as tf
 import os.path
 import numpy as np
-
 import matplotlib.pyplot as plt
 
 def vertical_display(value):
@@ -79,7 +78,7 @@ def evolve(restore, images_used, width, height, iterations, batch_size=16, num_h
 			loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits, tf_train_labels))
 	
 			global_step=tf.Variable(0)
-			learning_rate=tf.train.exponential_decay(0.5,global_step,1000,.9,staircase=True)
+			learning_rate=tf.train.exponential_decay(0.0005,global_step,1000,.9,staircase=True)
 			#optimizer = tf.train.GradientDescentOptimizer(learning_rate).minimize(loss,global_step=global_step)
 			#optimizer=tf.train.AdagradOptimizer(learning_rate=.05,initial_accumulator_value=0.1,use_locking=False)
 			optimizer=tf.train.AdamOptimizer(learning_rate).minimize(loss)
@@ -95,7 +94,13 @@ def evolve(restore, images_used, width, height, iterations, batch_size=16, num_h
 					print("Training network...\n")
 					tf.initialize_all_variables().run()
 					train_labels=train_target[target_number]
-					plot_accuracy=[]
+					plt.ion()
+					axes=plt.gca()
+					plt.grid(True)
+					plt.ylabel("Minibatch accuracy")
+					plt.xlabel("Iterations")
+					axes.set_xlim([0,iterations])
+					axes.set_ylim([-1.0,101.0])
 					for step in range(iterations):
 					
 						offset = (step * batch_size) % (train_labels.shape[0] - batch_size)
@@ -107,17 +112,19 @@ def evolve(restore, images_used, width, height, iterations, batch_size=16, num_h
 						#feed_dict_test = {tf_train_dataset : test_dataset, tf_train_labels : test_labels, keep_prob:1.0}
 						_, l, predictions = session.run([optimizer, loss, train_prediction], feed_dict=feed_dict_train)
 						batch_accuracy=accuracy.eval(feed_dict=feed_dict_train_eval)
-						plot_accuracy.append(batch_accuracy)
-						if (step % 50 == 0):
+						
+						if (step % 10 == 0):
 							print('Minibatch loss at step %d: %f' %(step, l))
-							print('Minibatch accuracy: %.1f%%' %batch_accuracy)		
-					
+							print('Minibatch accuracy: %.1f%%' %batch_accuracy)	
+							
+						plt.scatter(step, batch_accuracy)		
+						plt.pause(0.00005)
+					while True:
+						plt.pause(0.05)
 					save_path = saver.save(session, "parameters_"+str(target_number)+".ckpt")
 					print("Model saved in file: %s" % save_path)
 					#print('Test accuracy: %.1f%%' % accuracy.eval(feed_dict=feed_dict_test))
-					plt.plot(plot_accuracy)
-					plt.ylabel("Minibatch accuracy")
-					plt.show()
+					
 				else:
 					print("Using trained parameters for prediction...\n")
 					new_saver=tf.train.import_meta_graph("parameters_"+str(target_number)+".ckpt.meta")
